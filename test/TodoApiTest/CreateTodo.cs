@@ -1,14 +1,40 @@
-using System;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace TodoApiTest
 {
     public class CreateTodo 
+        : IClassFixture<WebApplicationFactory<TodoApi.Startup>>
     {
-        [Fact]
-        public void ShouldCreateTodo()
+        private readonly HttpClient client;
+        private readonly ITestOutputHelper output;
+
+        public CreateTodo(WebApplicationFactory<TodoApi.Startup> factory, ITestOutputHelper outputHelper)
         {
-            Assert.True(true);
+            client = factory.CreateClient();
+            output = outputHelper;
+        }
+
+        [Fact]
+        public async void ShouldCreateTodo()
+        {
+            var response = await PostTodo("Ta helg", false);
+            response.EnsureSuccessStatusCode();
+        }
+
+        private async Task<HttpResponseMessage> PostTodo(string name, bool completed)
+        {
+            var isCompleted = completed.ToString().ToLower();
+            return await client.PostAsync("https://localhost:5001/api/TodoItems",
+                new StringContent(
+                    $"{{\"Name\": \"{name}\", \"IsComplete\": {isCompleted} }}",
+                    Encoding.UTF8,
+                    "application/json"
+                ));
         }
     }
 }
